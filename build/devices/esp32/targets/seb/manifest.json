@@ -1,0 +1,47 @@
+{
+	"include": [
+		"$(MODULES)/drivers/st7789/manifest.json"
+	],
+	"config": {
+		"screen": "st7789",
+		"touch": "",
+		"backlight": 75
+	},
+    "build":{
+		"ESP32_SUBCLASS": "esp32s3"
+	},
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"spi": {
+			"miso_pin": -1,
+			"mosi_pin": 40,
+			"sck_pin": 39
+		},
+		"ili9341": {
+			"dc_pin": 41,
+			"rst_pin": 42,
+			"cs_pin": 38,
+			"spi_port": "SPI3_HOST",
+			"hz": 26000000,
+			"width": 320,
+			"height": 240
+		}
+	}
+}
