@@ -40,8 +40,8 @@
 			"cs_pin": 38,
 			"spi_port": "SPI3_HOST",
 			"hz": 26000000,
-			"width": 320,
-			"height": 240
+			"width": 240,
+			"height": 320
 		}
 	}
 }
