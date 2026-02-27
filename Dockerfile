@@ -3,7 +3,8 @@ FROM ubuntu:22.04
 # Install dependencies.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    gcc git wget make libncurses-dev flex bison gperf libglib2.0-dev
+    gcc git wget make libncurses-dev flex bison gperf \
+    libgtk-3-dev libglib2.0-dev
 
 # Copy the moddable repo.
 ENV MODDABLE /var/lib/moddable
