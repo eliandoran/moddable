@@ -22,3 +22,7 @@ ENV PATH=$PATH:/var/lib/binaryen/bin
 # Build Moddable WASM tools
 WORKDIR ${MODDABLE}/build/makefiles/wasm
 RUN make
+
+COPY ./entrypoint-wasm.sh .
+RUN chmod +x ./entrypoint-wasm.sh
+ENTRYPOINT [ "./entrypoint-wasm.sh" ]
