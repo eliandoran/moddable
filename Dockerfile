@@ -7,6 +7,7 @@ RUN apt-get update && \
 
 # Copy the moddable repo.
 ENV MODDABLE /var/lib/moddable
+ENV PATH=${PATH}:${MODDABLE}/build/bin/lin/release
 RUN mkdir ${MODDABLE}  
 WORKDIR /var/lib/moddable
 COPY . .
