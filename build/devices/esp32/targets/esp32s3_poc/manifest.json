@@ -1,0 +1,56 @@
+{
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json",		
+		"$(MODULES)/drivers/ssd1963/manifest.json"
+	],
+	"build":{
+		"ESP32_SUBCLASS": "esp32s3"
+	},
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target",
+		"neopixel"
+	],
+	"config": {
+		"screen": "ssd1963_p8",
+		"led": {
+			"pin": 48,
+			"rainbow": false,
+			"brightness": 32
+		}
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 4,
+			"scl_pin": 5
+		},
+		"spi": {
+			"miso_pin":37,
+			"mosi_pin":35,
+			"sck_pin": 36
+		},
+		"ssd1963p8": {
+			"dc_pin": 13,
+			"pclk_pin": 11,
+			"data0_pin": 15, "data1_pin": 48, "data2_pin": 16, "data3_pin": 47,
+			"data4_pin": 18, "data5_pin": 17, "data6_pin": 8,  "data7_pin": 5,
+			"cs_pin": 14,
+			"rst_pin": 10
+		}
+	}
+}
