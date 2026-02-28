@@ -1,0 +1,25 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json"
+	],
+	"defines": {
+		"ssd1963p8": {
+			"width": 480,
+			"height": 272,
+			"hz": 10000000,
+			"flipX": false,
+			"flipY": false
+		},
+		"poco": {
+			"dma": 1
+		}
+	},
+	"modules": {
+		"*": "./*",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
+	},
+	"preload": [
+		"ssd1963_p8",
+		"commodetto/Bitmap"
+	]
+}
