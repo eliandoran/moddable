@@ -2,7 +2,8 @@
 	"include": [
 		"$(MODULES)/drivers/button/manifest.json",
 		"$(MODULES)/drivers/neopixel/manifest.json",		
-		"$(MODULES)/drivers/ssd1963/manifest.json"
+		"$(MODULES)/drivers/ssd1963/manifest.json",
+		"$(MODULES)/drivers/ft5x06/manifest.json"
 	],
 	"build":{
 		"ESP32_SUBCLASS": "esp32s3"
@@ -16,6 +17,7 @@
 	],
 	"config": {
 		"screen": "ssd1963_p8",
+		"touch": "ft5x06",
 		"led": {
 			"pin": 48,
 			"rainbow": false,
@@ -35,9 +37,17 @@
 		"stack": 512
 	},
 	"defines": {
-		"i2c": {
-			"sda_pin": 4,
-			"scl_pin": 5
+		"ft5x06": {
+			"width": 480,
+			"height": 272,
+			"hz": 400000,
+			"sda": 9,
+			"scl": 21,
+			"threshold": 128,
+			"flipX": false,
+			"flipY": false,
+			"fitX": false,
+			"fitY": false
 		},
 		"spi": {
 			"miso_pin":37,
