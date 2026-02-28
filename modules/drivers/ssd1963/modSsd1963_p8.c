@@ -125,6 +125,9 @@ typedef struct {
 	int							opZero;		// async command is zero
 
 	uint8_t data[32];
+
+	uint8_t *rgb888Buf[2];
+	uint8_t rgb888BufIdx;
 } spiDisplayRecord, *spiDisplay;
 
 static void ssd1963Init(spiDisplay sd);
@@ -182,6 +185,11 @@ void xs_ssd1963p8_destructor(void *data)
 	if (sd->colorsInFlight)
 		vSemaphoreDelete(sd->colorsInFlight);
 
+	if (sd->rgb888Buf[0])
+		c_free(sd->rgb888Buf[0]);
+	if (sd->rgb888Buf[1])
+		c_free(sd->rgb888Buf[1]);
+
 	c_free(data);
 }
 
@@ -231,7 +239,7 @@ void xs_ssd1963p8(xsMachine *the)
 			MODDEF_SSD1963P8_DATA7_PIN,
 		},
 		.bus_width = 8,
-		.max_transfer_bytes = 65536,
+		.max_transfer_bytes = MODDEF_SSD1963P8_WIDTH * 32 * 3,
 
 		.clk_src = LCD_CLK_SRC_DEFAULT,
 		.psram_trans_align = 64,
@@ -263,9 +271,7 @@ void xs_ssd1963p8(xsMachine *the)
 			.pclk_active_neg = 0,
 			.pclk_idle_low = 0,
 			.reverse_color_bits = 0,
-#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
-			.swap_color_bytes = 1
-#endif
+			.swap_color_bytes = 0,
 		},
 		.lcd_cmd_bits = MODDEF_SSD1963P8_CMD_BITS,
 		.lcd_param_bits = 8,
@@ -302,6 +308,12 @@ void xs_ssd1963p8(xsMachine *the)
 	sd->opZero = 0;
 
 	sd->colorsInFlight = xSemaphoreCreateCounting(2, 2);		// async client uses two pixel buffers
+
+	sd->rgb888Buf[0] = c_malloc(MODDEF_SSD1963P8_WIDTH * 32 * 3);
+	sd->rgb888Buf[1] = c_malloc(MODDEF_SSD1963P8_WIDTH * 32 * 3);
+	if (!sd->rgb888Buf[0] || !sd->rgb888Buf[1])
+		xsUnknownError("no memory for RGB888 buffers");
+	sd->rgb888BufIdx = 0;
 
 	ssd1963Init(sd);
 
@@ -428,6 +440,20 @@ void xs_ssd1963p8_close(xsMachine *the)
 	xsmcSetHostData(xsThis, NULL);
 }
 
+static void rgb565ToRgb888(const PocoPixel *src, uint8_t *dst, int pixelCount)
+{
+	for (int i = 0; i < pixelCount; i++) {
+		uint16_t pixel = src[i];
+		uint8_t r5 = (pixel >> 11) & 0x1F;
+		uint8_t g6 = (pixel >> 5) & 0x3F;
+		uint8_t b5 = pixel & 0x1F;
+		dst[0] = (r5 << 3) | (r5 >> 2);
+		dst[1] = (g6 << 2) | (g6 >> 4);
+		dst[2] = (b5 << 3) | (b5 >> 2);
+		dst += 3;
+	}
+}
+
 void ssd1963Send(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
@@ -445,21 +471,25 @@ void ssd1963Send(PocoPixel *pixels, int byteLength, void *refcon)
 	}
 #endif
 	{
+		int pixelCount = byteLength >> 1;
+		uint8_t *buf = sd->rgb888Buf[sd->rgb888BufIdx];
+		sd->rgb888BufIdx ^= 1;
+		rgb565ToRgb888(pixels, buf, pixelCount);
+
 		int one = 1;
 		xQueueSend(sd->ops, &one, portMAX_DELAY);
-		esp_lcd_panel_io_tx_color(sd->io_handle, 0x2C, pixels, byteLength);
+		esp_lcd_panel_io_tx_color(sd->io_handle, 0x2C, buf, pixelCount * 3);
 
-		int lines = (byteLength >> 1) / sd->updateWidth;
+		int lines = pixelCount / sd->updateWidth;
 		sd->yMin += lines;
 		sd->updateLinesRemaining -= lines;
 
 		if (sd->updateLinesRemaining) {
-			// reversing endian!
 			uint8_t *data = sd->data + (4 * (sd->ping++ & 7));
-			data[0] = sd->yMin & 0xff;
-			data[1] = sd->yMin >> 8;
-			data[2] = sd->yMax & 0xff;
-			data[3] = sd->yMax >> 8;
+			data[0] = sd->yMin >> 8;
+			data[1] = sd->yMin & 0xff;
+			data[2] = sd->yMax >> 8;
+			data[3] = sd->yMax & 0xff;
 			ssd1963CommandAsync(sd, 0x2B, data, 4);
 		}
 	}
@@ -524,8 +554,8 @@ static const uint8_t gInit[] ICACHE_RODATA_ATTR = {
 	0x36, 1,
 		(MODDEF_SSD1963P8_FLIPY ? 0x80 : 0) | (MODDEF_SSD1963P8_FLIPX ? 0x40 : 0),
 
-	// ---- Pixel data interface: 16-bit 565 ----
-	0xF0, 1, 0x03,
+	// ---- Pixel data interface: 8-bit (RGB888 over 8-bit bus) ----
+	0xF0, 1, 0x00,
 
 	// ---- Post processing ----
 	0xBC, 4, 0x40, 0x80, 0x40, 0x01,
@@ -609,17 +639,17 @@ void ssd1963Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 #endif
 
 	uint8_t *data = sd->data + (4 * (sd->ping++ & 7));
-	data[0] = xMin & 0xff;
-	data[1] = xMin >> 8;
-	data[2] = xMax & 0xff;
-	data[3] = xMax >> 8;
+	data[0] = xMin >> 8;
+	data[1] = xMin & 0xff;
+	data[2] = xMax >> 8;
+	data[3] = xMax & 0xff;
 	ssd1963CommandAsync(sd, 0x2A, data, 4);
 
 	data = sd->data + (4 * (sd->ping++ & 7));
-	data[0] = yMin & 0xff;
-	data[1] = yMin >> 8;
-	data[2] = yMax & 0xff;
-	data[3] = yMax >> 8;
+	data[0] = yMin >> 8;
+	data[1] = yMin & 0xff;
+	data[2] = yMax >> 8;
+	data[3] = yMax & 0xff;
 	ssd1963CommandAsync(sd, 0x2B, data, 4);
 
 	xSemaphoreTake(sd->colorsInFlight, portMAX_DELAY);
