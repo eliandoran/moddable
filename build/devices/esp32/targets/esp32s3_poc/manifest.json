@@ -18,6 +18,7 @@
 	"config": {
 		"screen": "ssd1963_p8",
 		"touch": "ft5x06",
+		"rotation": 90,
 		"led": {
 			"pin": 48,
 			"rainbow": false,
@@ -44,8 +45,8 @@
 			"sda": 9,
 			"scl": 21,
 			"threshold": 128,
-			"flipX": false,
-			"flipY": false,
+			"flipX": true,
+			"flipY": true,
 			"fitX": false,
 			"fitY": false
 		},
