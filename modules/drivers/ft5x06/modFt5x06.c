@@ -201,8 +201,9 @@ void xs_FT5x06_read(xsMachine *the)
 
 	data[0] = FT5x06_REG_NUMTOUCHES;
 	err = modI2CWrite(&ft->i2c, data, 1, false);
-	if (err) xsUnknownError("write FT5x06_REG_NUMTOUCHES");
-	modI2CRead(&ft->i2c, data, 1, true);
+	if (err) return;
+	err = modI2CRead(&ft->i2c, data, 1, true);
+	if (err) return;
 	count = data[0] & 0x0F;
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_length);
@@ -218,8 +219,10 @@ void xs_FT5x06_read(xsMachine *the)
 		return;
 
 	data[0] = FT5x06_REG_TOUCH1_XH;	// touch data registers start at 0x03
-	modI2CWrite(&ft->i2c, data, 1, false);
-	modI2CRead(&ft->i2c, data, count * 6, true);
+	err = modI2CWrite(&ft->i2c, data, 1, false);
+	if (err) return;
+	err = modI2CRead(&ft->i2c, data, count * 6, true);
+	if (err) return;
 
 	for (i = 0; i < count; i++) {
 		uint8_t id = data[(i * 6) + 2] >> 4;

@@ -1,0 +1,75 @@
+{
+	"build": {
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"ESP32_SUBCLASS": "esp32s3",
+		"POCO_FRAMEBUFFER": "1"
+	},
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/drivers/esp32_rgb_lcd/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "esp32_rgb_lcd"
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 15,
+			"scl_pin": 16
+		},
+		"rgblcd": {
+			"width": 800,
+			"height": 480,
+			"pclk_hz": 18000000,
+			"data_width": 16,
+			"num_fbs": 2,
+			"dma_burst_size": 64,
+			"hsync_pin": 40,
+			"vsync_pin": 41,
+			"de_pin": 42,
+			"pclk_pin": 39,
+			"disp_pin": -1,
+			"data0_pin": 21,
+			"data1_pin": 47,
+			"data2_pin": 48,
+			"data3_pin": 45,
+			"data4_pin": 38,
+			"data5_pin": 9,
+			"data6_pin": 10,
+			"data7_pin": 11,
+			"data8_pin": 12,
+			"data9_pin": 13,
+			"data10_pin": 14,
+			"data11_pin": 7,
+			"data12_pin": 17,
+			"data13_pin": 18,
+			"data14_pin": 3,
+			"data15_pin": 46,
+			"hsync_pulse_width": 4,
+			"hsync_back_porch": 8,
+			"hsync_front_porch": 8,
+			"vsync_pulse_width": 4,
+			"vsync_back_porch": 8,
+			"vsync_front_porch": 8,
+			"pclk_idle_high": 1
+		}
+	}
+}

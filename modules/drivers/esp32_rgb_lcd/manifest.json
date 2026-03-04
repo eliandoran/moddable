@@ -1,0 +1,31 @@
+{
+	"defines": {
+		"rgblcd": {
+			"width": 800,
+			"height": 480,
+			"pclk_hz": 18000000,
+			"data_width": 16,
+			"num_fbs": 2,
+			"dma_burst_size": 64,
+			"hsync_pulse_width": 4,
+			"hsync_back_porch": 8,
+			"hsync_front_porch": 8,
+			"vsync_pulse_width": 4,
+			"vsync_back_porch": 8,
+			"vsync_front_porch": 8,
+			"pclk_idle_high": 1,
+			"disp_pin": -1
+		},
+		"poco": {
+			"dma": 0
+		}
+	},
+	"modules": {
+		"*": "./*",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
+	},
+	"preload": [
+		"esp32_rgb_lcd",
+		"commodetto/Bitmap"
+	]
+}

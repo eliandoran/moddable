@@ -348,6 +348,9 @@ ifeq ($(INSTRUMENT),1)
 	IDF_BUILD_OPTIONS += -DINSTRUMENT=1
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
+ifeq ($(POCO_FRAMEBUFFER),1)
+	C_DEFINES += -DkPocoFrameBuffer=1
+endif
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(INC_DIRS) $(SDK_DIRS) $(XS_DIRS) $(LIB_DIR) $(TMP_DIR),-I$(dir))
 
