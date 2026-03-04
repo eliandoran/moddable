@@ -354,7 +354,15 @@ void rgblcdEnd(void *refcon)
 	xSemaphoreTake(rd->vsync_sem, pdMS_TO_TICKS(100));
 
 	/* Toggle to the other buffer for the next frame */
+	uint8_t prevIndex = rd->fb_index;
 	rd->fb_index ^= 1;
+
+	/* Copy the just-displayed frame to the new back buffer so that
+	   non-dirty pixels are current when Poco does a partial update.
+	   Without this, the back buffer contains content from 2 frames ago
+	   and areas outside the dirty rectangle would show stale content. */
+	c_memcpy(rd->fb[rd->fb_index], rd->fb[prevIndex],
+		MODDEF_RGBLCD_WIDTH * MODDEF_RGBLCD_HEIGHT * sizeof(CommodettoPixel));
 
 	rd->firstFrame = 0;
 }
