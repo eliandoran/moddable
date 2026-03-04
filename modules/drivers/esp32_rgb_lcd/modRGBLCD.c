@@ -109,6 +109,9 @@
 #ifndef MODDEF_RGBLCD_DMA_BURST_SIZE
 	#define MODDEF_RGBLCD_DMA_BURST_SIZE 64
 #endif
+#ifndef MODDEF_RGBLCD_BOUNCE_BUFFER_SIZE_PX
+	#define MODDEF_RGBLCD_BOUNCE_BUFFER_SIZE_PX (MODDEF_RGBLCD_WIDTH * 10)
+#endif
 #ifndef MODDEF_RGBLCD_POWER_PIN
 	#define MODDEF_RGBLCD_POWER_PIN 19
 #endif
@@ -266,6 +269,7 @@ void xs_rgblcd(xsMachine *the)
 	panel_config.timings.flags.pclk_idle_high = MODDEF_RGBLCD_PCLK_IDLE_HIGH;
 
 	panel_config.flags.fb_in_psram = 1;
+	panel_config.bounce_buffer_size_px = MODDEF_RGBLCD_BOUNCE_BUFFER_SIZE_PX;
 
 	err = esp_lcd_new_rgb_panel(&panel_config, &rd->panel_handle);
 	if (ESP_OK != err) {
