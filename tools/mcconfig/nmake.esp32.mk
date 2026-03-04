@@ -248,6 +248,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\esp_hw_support\include\soc \
 	-I$(IDF_PATH)\components\esp_hw_support\port\$(ESP32_SUBCLASS)\private_include \
  	-I$(IDF_PATH)\components\esp_lcd\include \
+ 	-I$(IDF_PATH)\components\esp_lcd\rgb\include \
  	-I$(IDF_PATH)\components\esp_netif\include \
  	-I$(IDF_PATH)\components\esp_partition\include \
  	-I$(IDF_PATH)\components\esp_pm\include \

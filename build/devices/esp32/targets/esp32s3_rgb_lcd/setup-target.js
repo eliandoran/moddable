@@ -7,12 +7,13 @@
  */
 
 import config from "mc/config";
+import SMBus from "embedded:io/smbus";
 
 class Backlight {
 	#device;
 
 	constructor(brightness = 100) {
-		this.#device = new device.io.SMBus({
+		this.#device = new SMBus({
 			data: config.i2c?.sda ?? 15,
 			clock: config.i2c?.scl ?? 16,
 			hz: 100_000,
