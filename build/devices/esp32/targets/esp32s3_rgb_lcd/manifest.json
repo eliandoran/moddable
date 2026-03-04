@@ -7,7 +7,8 @@
 	},
 	"include": [
 		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODDABLE)/modules/drivers/esp32_rgb_lcd/manifest.json"
+		"$(MODDABLE)/modules/drivers/esp32_rgb_lcd/manifest.json",
+		"$(MODULES)/drivers/sensors/gt911/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

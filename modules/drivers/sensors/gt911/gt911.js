@@ -35,11 +35,13 @@ class GT911 {
 			...sensor
 		});
 
-		// check id
+		// check id (register 0x8140, 4-byte ASCII product ID)
+		// Accept any Goodix GT9xx variant (GT911, GT967, GT9271, etc.)
 		io.write(Uint8Array.of(0x81, 0x40));
-		const data = new Uint8Array(io.read(3));
-		if ((57 !== data[0]) || (49 !== data[1]) || (49 !== data[2]))
-			throw new Error("unrecognized");
+		const data = new Uint8Array(io.read(4));
+		const id = String.fromCharCode(data[0], data[1], data[2], data[3]).replace(/\0/g, "");
+		if (57 !== data[0])		// first byte must be ASCII '9'
+			throw new Error(`unrecognized: "${id}" [${data[0]}, ${data[1]}, ${data[2]}, ${data[3]}]`);
 
 		// set-up interrupt
 		if (interrupt && onSample) {

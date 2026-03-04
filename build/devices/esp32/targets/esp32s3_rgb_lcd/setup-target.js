@@ -7,10 +7,33 @@
  */
 
 import config from "mc/config";
+import Digital from "embedded:io/digital";
 import SMBus from "embedded:io/smbus";
+import Timer from "timer";
 
 const I2C_SDA = config.i2c?.sda ?? 15;
 const I2C_SCL = config.i2c?.scl ?? 16;
+const TOUCH_RST = 1;
+
+function resetTouchController() {
+	// Toggle GPIO 1 (TOUCH_RST) to reset the GT911 into a known state
+	// and select I2C address 0x5D (INT pin left floating/low during reset)
+	const rst = new Digital({
+		pin: TOUCH_RST,
+		mode: Digital.Output,
+	});
+	rst.write(0);		// Pull reset LOW
+	Timer.delay(120);
+	rst.close();
+
+	// Release reset by switching to input (float high via pull-up)
+	const rstIn = new Digital({
+		pin: TOUCH_RST,
+		mode: Digital.Input,
+	});
+	Timer.delay(100);
+	rstIn.close();
+}
 
 class Backlight {
 	#device;
@@ -51,5 +74,10 @@ globalThis.Host = Object.freeze({
 }, true);
 
 export default function (done) {
+	// Reset the GT911 touch controller via GPIO 1 before it is instantiated.
+	// This mirrors the reset sequence in sample.c and ensures the chip is
+	// responsive on I2C address 0x5D when the driver later reads its ID.
+	resetTouchController();
+
 	done?.();
 }

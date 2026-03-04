@@ -27,6 +27,7 @@ import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
+import Touch from "embedded:sensor/Touch/GT911";
 
 const device = {
 	I2C: {
@@ -56,7 +57,23 @@ const device = {
 	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
 	pin: {
 		button: 0,
-	}
+	},
+    sensor: {
+            Touch: class {
+                constructor(options) {				    
+                    const result = new Touch({
+                        ...options,
+                        sensor: {
+                            ...device.I2C.default,
+                            io: device.io.I2C,
+                            address: 0x5D
+                        }
+                    });
+                    result.configure({threshold: 20});
+                    return result;
+                }
+            }
+        }
 };
 
 export default device;
