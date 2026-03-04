@@ -40,7 +40,7 @@
 			"height": 480,
 			"pclk_hz": 15000000,
 			"data_width": 16,
-			"num_fbs": 2,
+			"num_fbs": 1,
 			"dma_burst_size": 64,
 			"power_pin": 19,
 			"hsync_pin": 40,
