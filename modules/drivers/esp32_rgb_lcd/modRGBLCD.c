@@ -103,6 +103,9 @@
 #ifndef MODDEF_RGBLCD_PCLK_IDLE_HIGH
 	#define MODDEF_RGBLCD_PCLK_IDLE_HIGH 1
 #endif
+#ifndef MODDEF_RGBLCD_PCLK_ACTIVE_NEG
+	#define MODDEF_RGBLCD_PCLK_ACTIVE_NEG 1
+#endif
 #ifndef MODDEF_RGBLCD_NUM_FBS
 	#define MODDEF_RGBLCD_NUM_FBS 1
 #endif
@@ -266,6 +269,7 @@ void xs_rgblcd(xsMachine *the)
 	panel_config.timings.vsync_back_porch  = MODDEF_RGBLCD_VSYNC_BACK_PORCH;
 	panel_config.timings.vsync_front_porch = MODDEF_RGBLCD_VSYNC_FRONT_PORCH;
 	panel_config.timings.flags.pclk_idle_high = MODDEF_RGBLCD_PCLK_IDLE_HIGH;
+	panel_config.timings.flags.pclk_active_neg = MODDEF_RGBLCD_PCLK_ACTIVE_NEG;
 
 	panel_config.flags.fb_in_psram = 1;
 	panel_config.bounce_buffer_size_px = MODDEF_RGBLCD_BOUNCE_BUFFER_SIZE_PX;
