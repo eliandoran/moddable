@@ -107,7 +107,7 @@
 	#define MODDEF_RGBLCD_PCLK_ACTIVE_NEG 1
 #endif
 #ifndef MODDEF_RGBLCD_NUM_FBS
-	#define MODDEF_RGBLCD_NUM_FBS 1
+	#define MODDEF_RGBLCD_NUM_FBS 2
 #endif
 #ifndef MODDEF_RGBLCD_DMA_BURST_SIZE
 	#define MODDEF_RGBLCD_DMA_BURST_SIZE 64
@@ -128,7 +128,8 @@ typedef struct {
 	esp_lcd_panel_handle_t		panel_handle;
 	SemaphoreHandle_t			vsync_sem;
 
-	void						*fb;			// single framebuffer (allocated by esp_lcd)
+	void						*fb[2];			// framebuffer pointers (allocated by esp_lcd)
+	uint8_t						fb_index;		// which buffer Poco is currently rendering into
 
 	uint8_t						firstFrame;
 } rgbDisplayRecord, *rgbDisplay;
@@ -305,8 +306,8 @@ void xs_rgblcd(xsMachine *the)
 		xsUnknownError("panel init failed");
 	}
 
-	/* Get driver-allocated framebuffer from PSRAM */
-	err = esp_lcd_rgb_panel_get_frame_buffer(rd->panel_handle, 1, &rd->fb);
+	/* Get driver-allocated framebuffers from PSRAM */
+	err = esp_lcd_rgb_panel_get_frame_buffer(rd->panel_handle, 2, &rd->fb[0], &rd->fb[1]);
 	if (ESP_OK != err) {
 		xs_rgblcd_destructor(rd);
 		xsmcSetHostData(xsThis, NULL);
@@ -320,8 +321,11 @@ void xs_rgblcd(xsMachine *the)
 		xsUnknownError("no memory for semaphore");
 	}
 
-	/* Clear framebuffer to black */
-	c_memset(rd->fb, 0, MODDEF_RGBLCD_WIDTH * MODDEF_RGBLCD_HEIGHT * 2);
+	/* Clear both framebuffers to black */
+	c_memset(rd->fb[0], 0, MODDEF_RGBLCD_WIDTH * MODDEF_RGBLCD_HEIGHT * 2);
+	c_memset(rd->fb[1], 0, MODDEF_RGBLCD_WIDTH * MODDEF_RGBLCD_HEIGHT * 2);
+
+	rd->fb_index = 0;
 }
 
 /*
@@ -334,24 +338,37 @@ void rgblcdBeginFrameBuffer(void *refcon, CommodettoPixel **pixels, int16_t *row
 {
 	rgbDisplay rd = refcon;
 
-	/* Wait for VSYNC *before* rendering so Poco draws during the
-	   blanking interval, minimizing the chance the LCD scans a
-	   partially-rendered dirty rectangle (white flash artifacts). */
-	xSemaphoreTake(rd->vsync_sem, pdMS_TO_TICKS(100));
-
-	/* Always return the single persistent framebuffer */
-	*pixels = (CommodettoPixel *)rd->fb;
+	/* Hand Poco the back buffer to draw into */
+	*pixels = (CommodettoPixel *)rd->fb[rd->fb_index];
 	*rowBytes = MODDEF_RGBLCD_WIDTH * sizeof(CommodettoPixel);
 }
 
 /*
  * ---- PixelsOutDispatch: doEnd ----
  *
- * Called by Poco/Piu when rendering is complete.
+ * Called by Poco/Piu when rendering is complete. Tell the LCD to scan
+ * from the freshly rendered buffer, wait for VSYNC, swap, then sync.
  */
 void rgblcdEnd(void *refcon)
 {
 	rgbDisplay rd = refcon;
+
+	/* Tell the RGB peripheral to display the buffer Poco just finished rendering */
+	esp_lcd_panel_draw_bitmap(rd->panel_handle, 0, 0,
+		MODDEF_RGBLCD_WIDTH, MODDEF_RGBLCD_HEIGHT, rd->fb[rd->fb_index]);
+
+	/* Wait for VSYNC to confirm the swap */
+	xSemaphoreTake(rd->vsync_sem, pdMS_TO_TICKS(100));
+
+	/* Toggle to the other buffer for the next frame */
+	uint8_t prevIndex = rd->fb_index;
+	rd->fb_index ^= 1;
+
+	/* Sync the new back buffer with the just-displayed frame so that
+	   non-dirty pixels are current when Poco does a partial update. */
+	c_memcpy(rd->fb[rd->fb_index], rd->fb[prevIndex],
+		MODDEF_RGBLCD_WIDTH * MODDEF_RGBLCD_HEIGHT * sizeof(CommodettoPixel));
+
 	rd->firstFrame = 0;
 }
 
