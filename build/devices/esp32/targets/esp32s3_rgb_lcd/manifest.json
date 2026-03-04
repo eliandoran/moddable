@@ -42,6 +42,7 @@
 			"data_width": 16,
 			"num_fbs": 2,
 			"dma_burst_size": 64,
+			"power_pin": 19,
 			"hsync_pin": 40,
 			"vsync_pin": 41,
 			"de_pin": 42,

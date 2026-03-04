@@ -9,23 +9,36 @@
 import config from "mc/config";
 import SMBus from "embedded:io/smbus";
 
+const I2C_SDA = config.i2c?.sda ?? 15;
+const I2C_SCL = config.i2c?.scl ?? 16;
+
 class Backlight {
 	#device;
 
 	constructor(brightness = 100) {
+		// Open SMBus to backlight/IO controller at 0x30
 		this.#device = new SMBus({
-			data: config.i2c?.sda ?? 15,
-			clock: config.i2c?.scl ?? 16,
+			data: I2C_SDA,
+			clock: I2C_SCL,
 			hz: 100_000,
 			address: 0x30
 		});
+
+		// Activate the controller (same as sample: sendI2CCommand(250))
+		try {
+			this.#device.writeByte(250);
+		} catch (e) {
+			trace(`Backlight activate failed: ${e}\n`);
+		}
+
+		// Set initial brightness
 		this.write(brightness);
 	}
 	write(value) {
 		// Map 0-100 brightness to 245-0 register value (inverted)
 		value = Math.max(0, Math.min(100, value));
-		const register = Math.round(245 - (value / 100) * 245);
-		this.#device.writeByte(register);
+		const regVal = Math.round(245 - (value / 100) * 245);
+		this.#device.writeByte(regVal);
 	}
 	close() {
 		this.#device?.close();
