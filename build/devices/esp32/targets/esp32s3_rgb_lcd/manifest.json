@@ -38,7 +38,7 @@
 		"rgblcd": {
 			"width": 800,
 			"height": 480,
-			"pclk_hz": 18000000,
+			"pclk_hz": 15000000,
 			"data_width": 16,
 			"num_fbs": 2,
 			"dma_burst_size": 64,
