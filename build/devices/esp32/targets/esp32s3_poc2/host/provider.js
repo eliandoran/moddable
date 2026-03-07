@@ -79,6 +79,22 @@ class Tone {
 			this.#timer = undefined;
 		}
 	}
+	playSound(freq, duration) {
+		let i = 0;
+		const playNext = () => {
+			if (i >= freq.length) return;
+			if (freq[i] > 0) {
+				const io = this.#io = new PWM({from: this.#io, hz: freq[i]});
+				io.write(512);
+			} else {
+				this.#io.write(0);
+			}
+			const d = duration[i];
+			i++;
+			Timer.set(playNext, d);
+		};
+		playNext();
+	}
 	note(note, octave = 4, duration) {
 		note = notes.get(note);
 		if (!note || (octave > 8))
