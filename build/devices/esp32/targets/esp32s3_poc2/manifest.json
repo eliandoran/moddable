@@ -56,6 +56,7 @@
 			"sck_pin": 36
 		},
 		"ssd1963p16": {
+			"hz": 30000000,
 			"cs_pin": 40,
 			"dc_pin": 7,			
 			"pclk_pin": 11,

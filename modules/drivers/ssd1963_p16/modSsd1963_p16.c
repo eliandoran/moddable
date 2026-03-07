@@ -493,7 +493,7 @@ static const uint8_t gInit[] ICACHE_RODATA_ATTR = {
 	0xE0, 1, 0x03,								// Lock PLL
 	kDelayMS, 1,
 	0x01, 0,									// Software reset
-	kDelayMS, 10,
+	kDelayMS, 100,
 
 	// ---- Pixel clock ----
 	0xE6, 3, 0x03, 0x33, 0x33,					// Set pixel clock frequency
@@ -568,9 +568,9 @@ void ssd1963Init(spiDisplay sd)
 
 #ifdef MODDEF_SSD1963P16_RST_PIN
 	modGPIOWrite(&sd->rst, 0);
-	modDelayMilliseconds(10);
+	modDelayMilliseconds(200);
 	modGPIOWrite(&sd->rst, 1);
-	modDelayMilliseconds(1);
+	modDelayMilliseconds(200);
 #endif
 
 	cmds = gInit;
