@@ -27,6 +27,68 @@ import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
+import Timer from "timer";
+
+const notes = new Map;
+notes.set("C", 65406);
+notes.set("C#", 69296);
+notes.set("D", 73416);
+notes.set("Db", 69296);
+notes.set("D#", 77782);
+notes.set("E", 82406);
+notes.set("Eb", 77782);
+notes.set("F", 87310);
+notes.set("F#", 92498);
+notes.set("G", 97998);
+notes.set("Gb", 92498);
+notes.set("G#", 103826);
+notes.set("A", 110000);
+notes.set("Ab", 103826);
+notes.set("A#", 116540);
+notes.set("B", 123470);
+notes.set("Bb", 116540);
+
+class Tone {
+	#io;
+	#timer;
+
+	constructor() {
+		this.#io = new PWM({pin: device.pin.buzzer});
+	}
+	close() {
+		this.#io?.close();
+		if (this.#timer)
+			Timer.clear(this.#timer);
+		this.#io = this.#timer = undefined;
+	}
+	tone(hz, duration) {
+		const io = this.#io = new PWM({from: this.#io, hz});
+		io.write(512);
+
+		if (duration) {
+			if (this.#timer)
+				Timer.schedule(this.#timer, duration);
+			else
+				this.#timer = Timer.set(() => {
+					this.#timer = undefined;
+					this.mute();
+				}, duration);
+		}
+		else if (this.#timer) {
+			Timer.clear(this.#timer);
+			this.#timer = undefined;
+		}
+	}
+	note(note, octave = 4, duration) {
+		note = notes.get(note);
+		if (!note || (octave > 8))
+			throw new Error;
+		this.tone(Math.idiv(note, (1 << (8 - octave))), duration);
+	}
+	mute() {
+		this.#io.write(0);
+	}
+}
 
 const device = {
 	I2C: {
@@ -60,8 +122,14 @@ const device = {
 		}
 	},
 	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
+	peripheral: {
+		tone: {
+			Default: Tone
+		}
+	},
 	pin: {
-		button: 0
+		button: 0,
+		buzzer: 6
 	}
 };
 

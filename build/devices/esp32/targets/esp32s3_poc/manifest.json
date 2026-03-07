@@ -56,11 +56,11 @@
 			"sck_pin": 36
 		},
 		"ssd1963p8": {
-			"dc_pin": 13,
+			"cs_pin": 40,
+			"dc_pin": 7,
 			"pclk_pin": 11,
 			"data0_pin": 15, "data1_pin": 48, "data2_pin": 16, "data3_pin": 47,
 			"data4_pin": 18, "data5_pin": 17, "data6_pin": 8,  "data7_pin": 5,
-			"cs_pin": 14,
 			"rst_pin": 10
 		}
 	}
