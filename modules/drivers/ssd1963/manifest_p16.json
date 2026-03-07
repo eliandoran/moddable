@@ -1,0 +1,27 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json"
+	],
+	"defines": {
+		"ssd1963p16": {
+			"width": 480,
+			"height": 272,
+			"hz": 10000000,
+			"flipX": false,
+			"flipY": false
+		},
+		"poco": {
+			"dma": 1
+		}
+	},
+	"modules": {
+		"*": [
+			"./ssd1963_p16"			
+		],
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
+	},
+	"preload": [
+		"ssd1963_p16",
+		"commodetto/Bitmap"
+	]
+}
