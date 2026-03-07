@@ -19,7 +19,7 @@
  */
 
 /*
-	SSD1963 display controller driver - 16-bit parallel (i80) interface
+	SSD1963 display controller driver - 16-bit parallel (i80) interface, RGB565
 	Adapted from SSD1963 8-bit parallel driver
 */
 
@@ -48,19 +48,19 @@
 	#error required pin not defined
 #endif
 #if !defined(MODDEF_SSD1963P16_DATA0_PIN) || !defined(MODDEF_SSD1963P16_DATA1_PIN) || !defined(MODDEF_SSD1963P16_DATA2_PIN) || !defined(MODDEF_SSD1963P16_DATA3_PIN) || !defined(MODDEF_SSD1963P16_DATA4_PIN) || !defined(MODDEF_SSD1963P16_DATA5_PIN) || !defined(MODDEF_SSD1963P16_DATA6_PIN) || !defined(MODDEF_SSD1963P16_DATA7_PIN)
-	#error required data pin (0-7) not defined
+	#error required data pin not defined (D0-D7)
 #endif
 #if !defined(MODDEF_SSD1963P16_DATA8_PIN) || !defined(MODDEF_SSD1963P16_DATA9_PIN) || !defined(MODDEF_SSD1963P16_DATA10_PIN) || !defined(MODDEF_SSD1963P16_DATA11_PIN) || !defined(MODDEF_SSD1963P16_DATA12_PIN) || !defined(MODDEF_SSD1963P16_DATA13_PIN) || !defined(MODDEF_SSD1963P16_DATA14_PIN) || !defined(MODDEF_SSD1963P16_DATA15_PIN)
-	#error required data pin (8-15) not defined
+	#error required data pin not defined (D8-D15)
 #endif
 #ifndef MODDEF_SSD1963P16_HZ
 	#define MODDEF_SSD1963P16_HZ (10000000)
 #endif
 #ifndef MODDEF_SSD1963P16_WIDTH
-	#define MODDEF_SSD1963P16_WIDTH 800
+	#define MODDEF_SSD1963P16_WIDTH 480
 #endif
 #ifndef MODDEF_SSD1963P16_HEIGHT
-	#define MODDEF_SSD1963P16_HEIGHT 480
+	#define MODDEF_SSD1963P16_HEIGHT 272
 #endif
 #ifndef MODDEF_SSD1963P16_FLIPX
 	#define MODDEF_SSD1963P16_FLIPX (false)
@@ -274,7 +274,7 @@ void xs_ssd1963p16(xsMachine *the)
 			.pclk_active_neg = 0,
 			.pclk_idle_low = 0,
 			.reverse_color_bits = 0,
-			.swap_color_bytes = 1,
+			.swap_color_bytes = 0,
 		},
 		.lcd_cmd_bits = MODDEF_SSD1963P16_CMD_BITS,
 		.lcd_param_bits = 8,
@@ -454,23 +454,21 @@ void ssd1963Send(PocoPixel *pixels, int byteLength, void *refcon)
 	}
 #endif
 	{
-		int pixelCount = byteLength >> 1;
-
 		int one = 1;
 		xQueueSend(sd->ops, &one, portMAX_DELAY);
 		esp_lcd_panel_io_tx_color(sd->io_handle, 0x2C, pixels, byteLength);
 
-		int lines = pixelCount / sd->updateWidth;
+		int lines = (byteLength >> 1) / sd->updateWidth;
 		sd->yMin += lines;
 		sd->updateLinesRemaining -= lines;
 
 		if (sd->updateLinesRemaining) {
-			uint8_t *data = sd->data + (4 * (sd->ping++ & 7));
+			uint8_t data[4];
 			data[0] = sd->yMin >> 8;
 			data[1] = sd->yMin & 0xff;
 			data[2] = sd->yMax >> 8;
 			data[3] = sd->yMax & 0xff;
-			ssd1963CommandAsync(sd, 0x2B, data, 4);
+			ssd1963Command(sd, 0x2B, data, 4);
 		}
 	}
 
@@ -510,7 +508,7 @@ static const uint8_t gInit[] ICACHE_RODATA_ATTR = {
 		(MODDEF_SSD1963P16_HEIGHT - 1) & 0xFF,
 		0x00,									// RGB sequence
 
-	// ---- Horizontal timing (defaults for 800x480) ----
+	// ---- Horizontal timing (defaults for 480x272) ----
 	0xB4, 8,
 		0x04, 0x1F,								// HT: horizontal total period = 1055
 		0x00, 0xD2,								// HPS: horizontal sync pulse start = 210
@@ -518,7 +516,7 @@ static const uint8_t gInit[] ICACHE_RODATA_ATTR = {
 		0x00, 0x00,								// LPS: horizontal display period start = 0
 		0x00,									// LPSPP: horizontal sync pulse subpixel start = 0
 
-	// ---- Vertical timing (defaults for 800x480) ----
+	// ---- Vertical timing (defaults for 480x272) ----
 	0xB6, 7,
 		0x02, 0x0C,								// VT: vertical total period = 524
 		0x00, 0x22,								// VPS: vertical sync pulse start = 34
@@ -534,7 +532,7 @@ static const uint8_t gInit[] ICACHE_RODATA_ATTR = {
 	0x36, 1,
 		(MODDEF_SSD1963P16_FLIPY ? 0x80 : 0) | (MODDEF_SSD1963P16_FLIPX ? 0x40 : 0),
 
-	// ---- Pixel data interface: 16-bit (RGB565 over 16-bit bus) ----
+	// ---- Pixel data interface: 16-bit RGB565 ----
 	0xF0, 1, 0x03,
 
 	// ---- Post processing ----
@@ -618,19 +616,21 @@ void ssd1963Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 	sd->firstBuffer = !sd->firstFrame && !sd->isContinue;
 #endif
 
-	uint8_t *data = sd->data + (4 * (sd->ping++ & 7));
+	// Use synchronous tx_param for address commands: on a 16-bit bus,
+	// tx_color packs bytes into 16-bit words (2 WR cycles for 4 bytes),
+	// but the SSD1963 expects one parameter byte per WR cycle.
+	uint8_t data[4];
 	data[0] = xMin >> 8;
 	data[1] = xMin & 0xff;
 	data[2] = xMax >> 8;
 	data[3] = xMax & 0xff;
-	ssd1963CommandAsync(sd, 0x2A, data, 4);
+	ssd1963Command(sd, 0x2A, data, 4);
 
-	data = sd->data + (4 * (sd->ping++ & 7));
 	data[0] = yMin >> 8;
 	data[1] = yMin & 0xff;
 	data[2] = yMax >> 8;
 	data[3] = yMax & 0xff;
-	ssd1963CommandAsync(sd, 0x2B, data, 4);
+	ssd1963Command(sd, 0x2B, data, 4);
 
 	xSemaphoreTake(sd->colorsInFlight, portMAX_DELAY);
 }

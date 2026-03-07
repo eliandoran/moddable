@@ -15,9 +15,7 @@
 		}
 	},
 	"modules": {
-		"*": [
-			"./ssd1963_p16"			
-		],
+		"*": "./*",
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
 	},
 	"preload": [

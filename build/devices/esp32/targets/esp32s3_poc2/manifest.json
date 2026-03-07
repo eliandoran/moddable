@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODULES)/drivers/button/manifest.json",
 		"$(MODULES)/drivers/neopixel/manifest.json",		
-		"$(MODULES)/drivers/ssd1963/manifest_p16.json",
+		"$(MODULES)/drivers/ssd1963_p16/manifest.json",
 		"$(MODULES)/drivers/ft5x06/manifest.json"
 	],
 	"build":{
@@ -62,7 +62,7 @@
 			"data0_pin": 15, "data1_pin": 48, "data2_pin": 16, "data3_pin": 47,
 			"data4_pin": 18, "data5_pin": 17, "data6_pin": 8,  "data7_pin": 5,
 			"data8_pin": 3, "data9_pin": 14, "data10_pin": 12, "data11_pin": 13,
-			"data12_pin": 38, "data13_pin": 41, "data14_pin": 4,  "data15_pin": 2,
+			"data12_pin": 38, "data13_pin": 41, "data14_pin": 4,  "data15_pin": 1,
 			"rst_pin": 10
 		}
 	}
