@@ -64,7 +64,8 @@
 			"data4_pin": 18, "data5_pin": 17, "data6_pin": 8,  "data7_pin": 5,
 			"data8_pin": 3, "data9_pin": 14, "data10_pin": 12, "data11_pin": 13,
 			"data12_pin": 38, "data13_pin": 41, "data14_pin": 4,  "data15_pin": 1,
-			"rst_pin": 10
+			"rst_pin": 10,
+			"opqueue": 30
 		}
 	}
 }

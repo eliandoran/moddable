@@ -85,8 +85,9 @@
 #ifndef MODDEF_SSD1963P16_CMD_BITS
 	#define MODDEF_SSD1963P16_CMD_BITS 16
 #endif
-
-#define MODDEF_SSD1963P16_OPQUEUE (10)
+#ifndef MODDEF_SSD1963P16_OPQUEUE
+	#define MODDEF_SSD1963P16_OPQUEUE (10)
+#endif
 
 typedef struct {
 	PixelsOutDispatch			dispatch;
