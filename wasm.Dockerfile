@@ -1,4 +1,5 @@
-FROM moddable
+ARG BASE_IMAGE=moddable
+FROM ${BASE_IMAGE}
 
 # Install deps
 RUN apt-get update && \
