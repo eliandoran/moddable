@@ -487,6 +487,10 @@ void ssd1963Send(PocoPixel *pixels, int byteLength, void *refcon)
 #define kDelayMS (255)
 
 static const uint8_t gInit[] ICACHE_RODATA_ATTR = {
+	// ---- Software reset (clean slate for warm reboots) ----
+	0x01, 0,									// Software reset
+	kDelayMS, 100,
+
 	// ---- PLL configuration ----
 	0xE2, 3, 0x23, 0x02, 0x54,					// Set PLL MN: M=35, N=2, dummy
 	0xE0, 1, 0x01,								// Start PLL
@@ -568,6 +572,10 @@ void ssd1963Init(spiDisplay sd)
 	const uint8_t *cmds;
 
 #ifdef MODDEF_SSD1963P16_RST_PIN
+	// Three-phase reset: ensure a clean falling edge regardless of
+	// the pin's prior state (e.g. warm reboot without power cycle).
+	modGPIOWrite(&sd->rst, 1);
+	modDelayMilliseconds(200);
 	modGPIOWrite(&sd->rst, 0);
 	modDelayMilliseconds(200);
 	modGPIOWrite(&sd->rst, 1);
