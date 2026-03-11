@@ -120,6 +120,8 @@ typedef struct {
 	uint8_t						syncFrames;
 #endif
 	uint8_t						memoryAccessControl;	// register 36h initialization value
+	uint8_t						rotation;				// 0, 1, 2, 3 => 0, 90, 180, 270
+	uint8_t						progressReverse;		// progressive send decrements yMax instead of incrementing yMin
 
 	SemaphoreHandle_t			colorsInFlight;
 	esp_lcd_panel_io_handle_t	io_handle;
@@ -385,13 +387,13 @@ void xs_ssd1963p16_get_pixelFormat(xsMachine *the)
 void xs_ssd1963p16_get_width(xsMachine *the)
 {
 	spiDisplay sd = xsmcGetHostData(xsThis);
-	xsmcSetInteger(xsResult, MODDEF_SSD1963P16_WIDTH);
+	xsmcSetInteger(xsResult, (sd->rotation & 1) ? MODDEF_SSD1963P16_HEIGHT : MODDEF_SSD1963P16_WIDTH);
 }
 
 void xs_ssd1963p16_get_height(xsMachine *the)
 {
 	spiDisplay sd = xsmcGetHostData(xsThis);
-	xsmcSetInteger(xsResult, MODDEF_SSD1963P16_HEIGHT);
+	xsmcSetInteger(xsResult, (sd->rotation & 1) ? MODDEF_SSD1963P16_WIDTH : MODDEF_SSD1963P16_HEIGHT);
 }
 
 void xs_ssd1963p16_get_c_dispatch(xsMachine *the)
@@ -438,6 +440,34 @@ void xs_ssd1963p16_close(xsMachine *the)
 	xsmcSetHostData(xsThis, NULL);
 }
 
+void xs_ssd1963p16_get_rotation(xsMachine *the)
+{
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, sd->rotation * 90);
+}
+
+void xs_ssd1963p16_set_rotation(xsMachine *the)
+{
+	spiDisplay sd = xsmcGetHostData(xsThis);
+	int32_t rotation = xsmcToInteger(xsArg(0));
+	uint8_t value;
+	static const uint8_t masks[] ICACHE_RODATA_ATTR = {0x00, 0x60, 0xc0, 0xa0};
+	if ((0 != rotation) && (90 != rotation) && (180 != rotation) && (270 != rotation))
+		xsRangeError("invalid rotation");
+
+	sd->rotation = (uint8_t)(rotation / 90);
+	value = sd->memoryAccessControl ^ c_read8(masks + sd->rotation);
+	ssd1963Command(sd, 0x36, &value, 1);
+
+	// Determine if the progressive send axis is reversed.
+	// For odd rotations (MV=1), progressive axis is columns: check MX (bit 6).
+	// For even rotations, progressive axis is pages: check MY (bit 7).
+	if (sd->rotation & 1)
+		sd->progressReverse = (value >> 6) & 1;
+	else
+		sd->progressReverse = (value >> 7) & 1;
+}
+
 void ssd1963Send(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	spiDisplay sd = refcon;
@@ -460,7 +490,10 @@ void ssd1963Send(PocoPixel *pixels, int byteLength, void *refcon)
 		esp_lcd_panel_io_tx_color(sd->io_handle, 0x2C, pixels, byteLength);
 
 		int lines = (byteLength >> 1) / sd->updateWidth;
-		sd->yMin += lines;
+		if (sd->progressReverse)
+			sd->yMax -= lines;
+		else
+			sd->yMin += lines;
 		sd->updateLinesRemaining -= lines;
 
 		if (sd->updateLinesRemaining) {
@@ -469,7 +502,7 @@ void ssd1963Send(PocoPixel *pixels, int byteLength, void *refcon)
 			data[1] = sd->yMin & 0xff;
 			data[2] = sd->yMax >> 8;
 			data[3] = sd->yMax & 0xff;
-			ssd1963Command(sd, 0x2B, data, 4);
+			ssd1963Command(sd, (sd->rotation & 1) ? 0x2A : 0x2B, data, 4);
 		}
 	}
 
@@ -617,6 +650,17 @@ void ssd1963Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 	xMax = xMin + w - 1;
 	yMax = yMin + h - 1;
 
+	// When the progressive axis direction is reversed (MX=1 for odd rotations,
+	// MY=1 for even), remap y coordinates so partial updates target the correct
+	// physical region. Full-screen updates are unaffected since the range spans
+	// the entire axis regardless of direction.
+	if (sd->progressReverse) {
+		uint16_t physDim = (sd->rotation & 1) ? MODDEF_SSD1963P16_WIDTH : MODDEF_SSD1963P16_HEIGHT;
+		uint16_t newYMin = physDim - 1 - yMax;
+		yMax = physDim - 1 - yMin;
+		yMin = newYMin;
+	}
+
 	sd->updateWidth = w;
 	sd->updateLinesRemaining = h;
 	sd->yMin = yMin;
@@ -628,18 +672,28 @@ void ssd1963Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 	// Use synchronous tx_param for address commands: on a 16-bit bus,
 	// tx_color packs bytes into 16-bit words (2 WR cycles for 4 bytes),
 	// but the SSD1963 expects one parameter byte per WR cycle.
+	//
+	// When MV is set (odd rotations), the SSD1963 changes the fill direction
+	// but does NOT remap the address space. We must swap the column/page
+	// commands so that Poco's x maps to physical pages and y to physical columns.
+	uint8_t colCmd = 0x2A, pageCmd = 0x2B;
+	if (sd->rotation & 1) {
+		colCmd = 0x2B;
+		pageCmd = 0x2A;
+	}
+
 	uint8_t data[4];
 	data[0] = xMin >> 8;
 	data[1] = xMin & 0xff;
 	data[2] = xMax >> 8;
 	data[3] = xMax & 0xff;
-	ssd1963Command(sd, 0x2A, data, 4);
+	ssd1963Command(sd, colCmd, data, 4);
 
 	data[0] = yMin >> 8;
 	data[1] = yMin & 0xff;
 	data[2] = yMax >> 8;
 	data[3] = yMax & 0xff;
-	ssd1963Command(sd, 0x2B, data, 4);
+	ssd1963Command(sd, pageCmd, data, 4);
 
 	xSemaphoreTake(sd->colorsInFlight, portMAX_DELAY);
 }

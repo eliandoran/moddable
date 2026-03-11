@@ -45,6 +45,8 @@ export default class SSD1963 @ "xs_ssd1963p16_destructor" {
 	command(id, data) @ "xs_ssd1963p16_command";
 	set syncFrames(value) @ "xs_ssd1963p16_set_syncFrames";
 	get syncFrames() @ "xs_ssd1963p16_get_syncFrames";
+	set rotation(value) @ "xs_ssd1963p16_set_rotation";
+	get rotation() @ "xs_ssd1963p16_get_rotation";
 
 	close() @ "xs_ssd1963p16_close";
 
