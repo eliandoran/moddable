@@ -122,13 +122,17 @@ class Screen extends config.Screen {
 						case 3:
 							if (point.down) {
 								delete point.down;
-								touch.context.onTouchEnded(i, point.x, point.y, Time.ticks);
+								touch.context.onTouchEnded(i, point.lastX ?? point.x, point.lastY ?? point.y, Time.ticks);
 								delete point.x;
 								delete point.y;
+								delete point.lastX;
+								delete point.lastY;
 							}
 							break;
 						case 1:
 						case 2:
+							point.lastX = point.x;
+							point.lastY = point.y;
 							if (!point.down) {
 								point.down = true;
 								touch.context.onTouchBegan(i, point.x, point.y, Time.ticks);
