@@ -17,7 +17,8 @@
 	],
 	"config": {
 		"screen": "ssd1963_p8",
-		"touch": "ft5x06"
+		"touch": "ft5x06",
+		"rotation": 270
 	},
 	"creation": {
 		"static": 0,
