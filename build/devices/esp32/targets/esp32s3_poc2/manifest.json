@@ -2,11 +2,12 @@
 	"include": [
 		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODULES)/drivers/button/manifest.json",
-		"$(MODULES)/drivers/ssd1963_p16/manifest.json",
+		"$(MODULES)/drivers/ssd1963/manifest.json",
 		"$(MODULES)/drivers/ft5x06/manifest.json"
 	],
 	"build":{
-		"ESP32_SUBCLASS": "esp32s3"
+		"ESP32_SUBCLASS": "esp32s3",
+		"SDKCONFIGPATH": "./sdkconfig"
 	},
 	"modules": {
 		"setup/target": "./setup-target"
@@ -15,7 +16,7 @@
 		"setup/target"
 	],
 	"config": {
-		"screen": "ssd1963_p16",
+		"screen": "ssd1963_p8",
 		"touch": "ft5x06"
 	},
 	"creation": {
@@ -48,18 +49,15 @@
 			"mosi_pin":35,
 			"sck_pin": 36
 		},
-		"ssd1963p16": {
+		"ssd1963p8": {
 			"hz": 10000000,
 			"cs_pin": 40,
 			"dc_pin": 7,			
 			"pclk_pin": 11,
 			"data0_pin": 15, "data1_pin": 48, "data2_pin": 16, "data3_pin": 47,
 			"data4_pin": 18, "data5_pin": 17, "data6_pin": 8,  "data7_pin": 5,
-			"data8_pin": 3, "data9_pin": 14, "data10_pin": 12, "data11_pin": 13,
-			"data12_pin": 38, "data13_pin": 41, "data14_pin": 4,  "data15_pin": 1,
-			"rst_pin": 10,
-			"opqueue": 30,
-			"tearingeffect_pin": 42
+			"data8_pin": 3,
+			"rst_pin": 10
 		}
 	}
 }
