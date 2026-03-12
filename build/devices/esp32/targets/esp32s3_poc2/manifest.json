@@ -59,7 +59,7 @@
 			"data12_pin": 38, "data13_pin": 41, "data14_pin": 4,  "data15_pin": 1,
 			"rst_pin": 10,
 			"opqueue": 30,
-			"tearingeffect_pin": 45
+			"tearingeffect_pin": 42
 		}
 	}
 }

@@ -481,7 +481,10 @@ void ssd1963Send(PocoPixel *pixels, int byteLength, void *refcon)
 	if (sd->firstBuffer && sd->syncFrames) {
 		sd->firstBuffer = 0;
 		sd->waiting = 1;
-		xSemaphoreTake(sd->startSend, portMAX_DELAY);
+		if (pdFALSE == xSemaphoreTake(sd->startSend, pdMS_TO_TICKS(500))) {
+			// TE signal never arrived — wiring or edge polarity problem
+			modLog("TE timeout — no interrupt received");
+		}
 	}
 #endif
 	{
