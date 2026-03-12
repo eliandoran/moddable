@@ -145,7 +145,7 @@ const device = {
 	},
 	pin: {
 		button: 0,
-		buzzer: 6
+		buzzer: 14
 	}
 };
 
